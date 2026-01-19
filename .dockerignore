@@ -1,0 +1,49 @@
+# Node modules
+**/node_modules
+**/npm-debug.log
+
+# Build outputs
+**/dist
+**/build
+**/.next
+
+# Environment files
+**/.env
+**/.env.local
+**/.env.*.local
+
+# IDE
+**/.vscode
+**/.idea
+**/*.swp
+**/*.swo
+
+# OS
+**/.DS_Store
+**/Thumbs.db
+
+# Git
+**/.git
+**/.gitignore
+
+# Testing
+**/coverage
+**/.nyc_output
+
+# Logs
+**/*.log
+
+# Temporary files
+**/tmp
+**/temp
+
+# Documentation (excluding README)
+PRESENTATION.md
+walkthrough.md
+
+# Leo build artifacts
+commercial_devis/build
+commercial_devis/outputs
+
+# Scripts
+run_app.bat

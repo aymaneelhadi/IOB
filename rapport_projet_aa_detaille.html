@@ -1,0 +1,286 @@
+<!DOCTYPE html>
+<html lang="fr">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Rapport de Projet A&A</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&family=JetBrains+Mono&display=swap');
+
+        body {
+            font-family: 'Inter', sans-serif;
+            line-height: 1.6;
+            color: #333;
+            max-width: 210mm;
+            /* A4 width */
+            margin: 0 auto;
+            padding: 20px;
+            background: #f0f0f0;
+        }
+
+        .page {
+            background: white;
+            padding: 20mm;
+            margin: 20px auto;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            min-height: 297mm;
+            /* A4 height */
+        }
+
+        @media print {
+            body {
+                background: white;
+                margin: 0;
+                padding: 0;
+            }
+
+            .page {
+                box-shadow: none;
+                margin: 0;
+                page-break-after: always;
+                min-height: auto;
+            }
+        }
+
+        h1 {
+            font-weight: 800;
+            font-size: 2.5em;
+            color: #1a1a1a;
+            margin-bottom: 0.2em;
+        }
+
+        h2 {
+            font-weight: 600;
+            font-size: 1.8em;
+            color: #2563eb;
+            margin-top: 1.5em;
+            border-bottom: 2px solid #e5e7eb;
+            padding-bottom: 0.5em;
+        }
+
+        h3 {
+            font-weight: 600;
+            font-size: 1.3em;
+            color: #4b5563;
+            margin-top: 1.2em;
+        }
+
+        p {
+            margin-bottom: 1em;
+            text-align: justify;
+        }
+
+        ul {
+            margin-bottom: 1em;
+        }
+
+        li {
+            margin-bottom: 0.5em;
+        }
+
+        code {
+            font-family: 'JetBrains Mono', monospace;
+            background: #f3f4f6;
+            padding: 0.2em 0.4em;
+            border-radius: 4px;
+            font-size: 0.9em;
+            color: #db2777;
+        }
+
+        pre {
+            background: #0f172a;
+            color: #f8fafc;
+            padding: 1.5em;
+            border-radius: 8px;
+            overflow-x: auto;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.85em;
+        }
+
+        .cover-page {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            height: 250mm;
+            text-align: center;
+        }
+
+        .logo {
+            font-size: 4em;
+            font-weight: bold;
+            color: #2563eb;
+            margin-bottom: 20px;
+        }
+
+        .subtitle {
+            font-size: 1.5em;
+            color: #6b7280;
+            font-weight: 300;
+        }
+
+        .meta {
+            margin-top: 50px;
+            color: #9ca3af;
+        }
+
+        .toc {
+            background: #f9fafb;
+            padding: 2em;
+            border-radius: 12px;
+        }
+
+        .toc h2 {
+            margin-top: 0;
+            border: none;
+            font-size: 1.5em;
+        }
+
+        .toc ul {
+            list-style: none;
+            padding: 0;
+        }
+
+        .toc li {
+            margin-bottom: 0.8em;
+            border-bottom: 1px dashed #e5e7eb;
+        }
+
+        .toc span {
+            float: right;
+            font-weight: bold;
+            color: #9ca3af;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="page">
+        <div class="cover-page">
+            <div class="logo">A&A Commercial</div>
+            <h1>Rapport Technique Détaillé</h1>
+            <p class="subtitle">Développement d'une Solution de Devis Décentralisée sur Aleo Blockchain</p>
+
+            <div class="meta">
+                <p><strong>Date :</strong> 05 Janvier 2026</p>
+                <p><strong>Version :</strong> 2.0</p>
+                <p><strong> Technologies :</strong> React • TypeScript • Aleo (ZK) • Tailwind</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="page">
+        <div class="toc">
+            <h2>Table des Matières</h2>
+            <ul>
+                <li>1. Résumé Exécutif <span>p.3</span></li>
+                <li>2. Introduction et Contexte <span>p.3</span></li>
+                <li>3. Phase 1 : Fondation Technique <span>p.4</span></li>
+                <li>4. Phase 2 : Défis et Résolutions <span>p.5</span></li>
+                <li>5. Phase 3 : Design "Nebula Glass" <span>p.6</span></li>
+                <li>6. Phase 4 : Navigation et UX <span>p.7</span></li>
+                <li>7. Phase 5 : Documents PDF <span>p.8</span></li>
+                <li>8. Analyse du Code <span>p.9</span></li>
+                <li>9. Roadmap et Conclusion <span>p.10</span></li>
+            </ul>
+        </div>
+
+        <h2>1. Résumé Exécutif</h2>
+        <p>Ce rapport détaille le cycle de développement intégral de l'application <strong>A&A Commercial</strong>, une
+            plateforme innovante permettant aux entreprises de créer, gérer et certifier des devis commerciaux sur la
+            blockchain Aleo.</p>
+        <p>L'objectif était de marier la confidentialité du <strong>Zero-Knowledge (ZK)</strong> avec une interface
+            utilisateur moderne. Nous avons surmonté des défis majeurs comme l'intégration du Wallet Aleo, la gestion
+            d'erreurs de build complexes, et la création d'un moteur de génération de PDF professionnel côté client.</p>
+
+        <h2>2. Introduction</h2>
+        <h3>2.1 La Blockchain Aleo</h3>
+        <p>Contrairement aux blockchains publiques classiques, Aleo permet la confidentialité par défaut. C'est crucial
+            pour le B2B : une entreprise ne veut pas que ses concurrents voient ses prix.</p>
+
+        <h3>2.2 Objectifs</h3>
+        <ul>
+            <li><strong>Immuabilité</strong> : Devis infalsifiables.</li>
+            <li><strong>Confidentialité</strong> : Données cryptées.</li>
+            <li><strong>Professionnalisme</strong> : Interface et documents haut de gamme.</li>
+        </ul>
+    </div>
+
+    <div class="page">
+        <h2>3. Fondation Technique</h2>
+        <p>Nous avons choisi une stack moderne et robuste :</p>
+        <ul>
+            <li><strong>Frontend :</strong> React 18 + Vite (Performance)</li>
+            <li><strong>Langage :</strong> TypeScript (Sécurité du code)</li>
+            <li><strong>Blockchain :</strong> Leo Wallet Adapter</li>
+        </ul>
+
+        <h3>Architecture Frontend</h3>
+        <p>L'application est une SPA (Single Page Application) centrée sur la performance.</p>
+        <pre>
+Index.html
+├── Main.tsx
+│   └── WalletProvider (Contexte Blockchain)
+│       └── App.tsx (Logique Métier)
+│           ├── Sidebar (Navigation)
+│           ├── Dashboard (Stats)
+│           ├── QuoteModal (Formulaire)
+│           └── PDFGenerator (Service)
+</pre>
+    </div>
+
+    <div class="page">
+        <h2>4. Défis et Résolutions</h2>
+
+        <h3>4.1 Le Bug "Unknown Client"</h3>
+        <p><strong>Problème :</strong> Les devis créés s'affichaient tous avec "Unknown Client".<br>
+            <strong>Cause :</strong> Le formulaire ne demandait que l'adresse crypto, pas le nom de l'entreprise.<br>
+            <strong>Solution :</strong> Nous avons refactoré <code>QuoteModal.tsx</code> pour inclure un champ
+            obligatoire "Client Name" et propagé cette donnée dans tout l'état de l'application.
+        </p>
+
+        <h3>4.2 Erreurs de Build PostCSS</h3>
+        <p>Des conflits dans la configuration Tailwind (notamment sur les sélecteurs <code>::selection</code>)
+            empêchaient la compilation. Une réécriture propre de <code>index.css</code> a été nécessaire pour isoler les
+            styles globaux.</p>
+    </div>
+
+    <div class="page">
+        <h2>5. Design "Nebula Glass"</h2>
+        <p>Le client souhaitait quitter l'esthétique "industrielle" pour quelque chose de futuriste.</p>
+
+        <h3>Le Concept</h3>
+        <p>Un fond sombre profond (Slate-950) rehaussé par des panneaux de verre dépoli (Glassmorphism) et des accents
+            néons.</p>
+
+        <pre>
+/* Exemple de la classe utilitaire glass-panel */
+.glass-panel {
+    background: rgba(255, 255, 255, 0.03);
+    backdrop-filter: blur(24px);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+}
+</pre>
+    </div>
+
+    <div class="page">
+        <h2>7. Génération de PDF</h2>
+        <p>Transformer l'app en outil pro nécessitait de vraies factures PDF, pas de simples captures d'écran.</p>
+
+        <h3>Technicalité</h3>
+        <p>Nous utilisons <code>jsPDF</code> combiné à <code>jspdf-autotable</code>. Le défi principal fut l'intégration
+            du logo : le PDF se génère de manière synchrone, mais l'image charge en asynchrone. Nous avons dû créer un
+            pipeline spécifique utilisant <code>await</code> pour charger l'image en Base64 avant de "dessiner" le
+            document.</p>
+    </div>
+
+    <div class="page">
+        <h2>Conclusion</h2>
+        <p>Le projet A&A est passé d'un prototype technique à une application commerciale viable et esthétique. Les
+            fonctionnalités critiques (Wallet, Devis, PDF) sont opérationnelles et sécurisées.</p>
+    </div>
+
+</body>
+
+</html>

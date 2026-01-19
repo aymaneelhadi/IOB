@@ -1,0 +1,6 @@
+{
+    "program": "commercial_devis.aleo",
+    "version": "0.0.0",
+    "description": "Commercial Quote Management on Aleo",
+    "license": "MIT"
+}
