@@ -16,12 +16,17 @@ import {
     Shield,
     BookOpen,
     Zap,
-    Users
+    Users,
+    LogOut,
+    X,
+    Loader2
 } from 'lucide-react';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import { AddressBook } from './components/AddressBook';
 import { QuoteModal } from './components/QuoteModal';
+import { PROGRAM_ID, hexToField } from './utils/aleo-client';
+import { fileToHash } from './utils/hashing';
 
 // Types
 type Quote = {
@@ -33,16 +38,21 @@ type Quote = {
     status: 'Pending' | 'Paid' | 'Rejected';
 };
 
-type View = 'dashboard' | 'quotes' | 'clients' | 'settings';
+type View = 'dashboard' | 'quotes' | 'clients' | 'settings' | 'verify';
 
 function App() {
-    const { publicKey, connected, select, wallets } = useWallet();
+    const { select, wallets, publicKey, disconnect, requestRecordPlaintexts } = useWallet();
+    const connected = !!publicKey;
 
     const [activeView, setActiveView] = useState<View>('dashboard');
     const [quotes, setQuotes] = useState<Quote[]>([]);
     const [isQuoteModalOpen, setIsQuoteModalOpen] = useState(false);
     const [isAddressBookOpen, setIsAddressBookOpen] = useState(false);
     const [selectedAddress, setSelectedAddress] = useState('');
+
+    // Verify State
+    const [verifyStatus, setVerifyStatus] = useState<'idle' | 'scanning' | 'verified' | 'failed'>('idle');
+    const [matchedRecord, setMatchedRecord] = useState<any>(null);
 
     // Load mock data
     useEffect(() => {
@@ -73,6 +83,96 @@ function App() {
         setSelectedAddress(addr);
         setIsAddressBookOpen(false);
         setIsQuoteModalOpen(true);
+    };
+
+    const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+        console.log("File Upload Triggered");
+        const file = event.target.files?.[0];
+        if (!file) {
+            console.log("No file selected");
+            return;
+        }
+        console.log("File selected:", file.name);
+
+        // Check for crypto support
+        if (!window.crypto || !window.crypto.subtle) {
+            alert("Error: capabilities (crypto.subtle) missing. Use localhost or HTTPS.");
+            return;
+        }
+
+        setVerifyStatus('scanning');
+        setMatchedRecord(null);
+
+        try {
+            // 1. Calculate Hash of the file
+            const hash = await fileToHash(file);
+            const fieldHash = hexToField(hash);
+            console.log("Calculated File Hash:", hash);
+            console.log("Field Hash:", fieldHash);
+
+            // 2. Fetch Records from Wallet
+            if (!publicKey) {
+                toast.error("Please connect wallet to verify");
+                setVerifyStatus('idle');
+                return;
+            }
+
+            if (requestRecordPlaintexts) {
+                toast.info("Scanning blockchain for matching records...");
+                let records: any[] = [];
+                try {
+                    records = await requestRecordPlaintexts(PROGRAM_ID);
+                } catch (err) {
+                    console.warn("Wallet scan failed (likely program not deployed/synced), trying local fallback...");
+                }
+
+                // --- DEMO MODE CHECK ---
+                // Also load "demo" records that we saved locally when the blockchain write failed.
+                // CRITICAL FOR DEMO: strictly allow only records OWNED by the connected wallet.
+                // This simulates the blockchain privacy (Issuer -> Recipient).
+                const allDemoRecords = JSON.parse(localStorage.getItem('demo_records') || '[]');
+                const myDemoRecords = allDemoRecords.filter((r: any) => r.owner === publicKey);
+
+                const allRecords = [...records, ...myDemoRecords];
+
+                console.log("Records Found (Chain + Local Owner-Only):", allRecords);
+
+                // 3. Match Logic
+                const match = allRecords.find((r: any) => {
+                    // Check if unspent (usually only unspent are returned, but safe to check if property exists)
+                    if (r.spent) return false;
+                    // Compare content_hash
+                    return r.data.content_hash === fieldHash;
+                });
+
+                if (match) {
+                    setMatchedRecord(match);
+                    setVerifyStatus('verified');
+                    toast.success(match.isMock ? "Verified (Local Demo)" : "Blockchain Verified");
+                } else {
+                    setVerifyStatus('failed');
+                    // Helpful hint for the demo if it exists but wasn't found due to ownership
+                    const existsLikely = allDemoRecords.find((r: any) => r.data.content_hash === fieldHash);
+                    if (existsLikely) {
+                        toast.error(`Verification Failed: Record exists but belongs to ${existsLikely.owner.slice(0, 6)}...`);
+                    } else {
+                        toast.error("No matching record found.");
+                    }
+                }
+            } else {
+                console.warn("Wallet adapter missing requestRecordPlaintexts");
+                toast.error("Wallet does not support record scanning");
+                setVerifyStatus('failed');
+            }
+
+        } catch (e: any) {
+            console.error("Verification Error:", e);
+            toast.error("Verification failed: " + e.message);
+            setVerifyStatus('failed');
+        } finally {
+            // Reset input so same file can be selected again
+            event.target.value = '';
+        }
     };
 
     const exportToCSV = () => {
@@ -330,6 +430,81 @@ function App() {
                         </div>
                     </div>
                 );
+            case 'verify':
+                return (
+                    <div className="space-y-6 animate-in slide-in-from-bottom-5 duration-500">
+                        <h2 className="text-3xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-violet-400 to-cyan-400">Verify Document</h2>
+
+                        <div className="glass-panel p-8 rounded-2xl border border-white/5">
+                            <div className="max-w-xl mx-auto text-center space-y-6">
+                                <div className="p-8 border-2 border-dashed border-white/10 rounded-2xl hover:border-violet-500/50 hover:bg-white/5 transition-all group cursor-pointer relative">
+                                    <input
+                                        type="file"
+                                        onChange={handleFileUpload}
+                                        className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
+                                        accept=".pdf,.doc,.docx"
+                                    />
+                                    <div className="flex flex-col items-center justify-center gap-4">
+                                        <div className="w-16 h-16 rounded-full bg-violet-500/10 flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
+                                            {verifyStatus === 'scanning' ? (
+                                                <Loader2 size={32} className="text-violet-400 animate-spin" />
+                                            ) : (
+                                                <Shield size={32} className="text-violet-400" />
+                                            )}
+                                        </div>
+                                        <div>
+                                            <h3 className="text-lg font-bold text-white mb-1">Drop your PDF here</h3>
+                                            <p className="text-slate-400 text-sm">or click to browse</p>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                {verifyStatus === 'verified' && matchedRecord && (
+                                    <div className="bg-emerald-500/10 border border-emerald-500/20 rounded-xl p-6 animate-in zoom-in-95 duration-300">
+                                        <div className="flex items-center gap-3 mb-4">
+                                            <div className="w-8 h-8 rounded-full bg-emerald-500/20 flex items-center justify-center">
+                                                <Shield size={16} className="text-emerald-400" />
+                                            </div>
+                                            <div className="text-left">
+                                                <h3 className="font-bold text-emerald-400">
+                                                    {matchedRecord.isMock ? "Verified (Local Demo)" : "Blockchain Verified"}
+                                                </h3>
+                                                <p className="text-xs text-emerald-500/70">
+                                                    {matchedRecord.isMock ? "Valid cryptographic match found in local storage" : "Cryptographic proof found on Aleo"}
+                                                </p>
+                                            </div>
+                                        </div>
+
+                                        <div className="grid grid-cols-2 gap-4 text-left">
+                                            <div className="bg-black/20 p-3 rounded-lg">
+                                                <span className="text-xs text-slate-500 block">Amount</span>
+                                                <span className="font-mono text-emerald-300 text-lg">{matchedRecord.data.amount.replace('u64', '')} USDC</span>
+                                            </div>
+                                            <div className="bg-black/20 p-3 rounded-lg">
+                                                <span className="text-xs text-slate-500 block">Owner</span>
+                                                <span className="font-mono text-emerald-300 text-xs truncate block">{matchedRecord.owner}</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                )}
+
+                                {verifyStatus === 'failed' && (
+                                    <div className="bg-red-500/10 border border-red-500/20 rounded-xl p-6 animate-in zoom-in-95 duration-300">
+                                        <div className="flex items-center gap-3">
+                                            <div className="w-8 h-8 rounded-full bg-red-500/20 flex items-center justify-center">
+                                                <X size={16} className="text-red-400" />
+                                            </div>
+                                            <div className="text-left">
+                                                <h3 className="font-bold text-red-400">Verification Failed</h3>
+                                                <p className="text-xs text-red-300/70">No matching record found for this document.</p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+                    </div>
+                );
             case 'dashboard':
             default:
                 return (
@@ -442,6 +617,12 @@ function App() {
                         active={activeView === 'clients'}
                         onClick={() => setActiveView('clients')}
                     />
+                    <NavItem
+                        icon={<Shield size={20} />}
+                        label="Verify"
+                        active={activeView === 'verify'}
+                        onClick={() => setActiveView('verify')}
+                    />
                     <div className="pt-6 pb-2 px-4 text-xs font-semibold text-slate-500 uppercase tracking-wider hidden lg:block">System</div>
                     <NavItem
                         icon={<Settings size={20} />}
@@ -481,28 +662,40 @@ function App() {
                             <span className="hidden sm:inline">Address Book</span>
                         </button>
 
-                        <button
-                            onClick={() => {
-                                if (!connected) {
-                                    const leo = wallets.find(w => w.adapter.name === 'Leo Wallet');
-                                    if (leo) select(leo.adapter.name);
-                                }
-                            }}
-                            className="relative group px-4 py-2 rounded-xl text-sm font-bold overflow-hidden transition-all"
-                        >
-                            <div className={`absolute inset-0 opacity-20 group-hover:opacity-30 transition-opacity ${connected ? 'bg-emerald-500' : 'bg-violet-500'}`}></div>
-                            <div className={`absolute inset-0 blur-xl opacity-20 ${connected ? 'bg-emerald-500' : 'bg-violet-500'}`}></div>
-                            <span className={`relative flex items-center gap-2 ${connected ? 'text-emerald-400' : 'text-violet-400'}`}>
-                                {connected ? (
-                                    <>
-                                        <span className="w-2 h-2 bg-emerald-400 rounded-full shadow-[0_0_10px_rgba(52,211,153,0.5)]"></span>
-                                        {publicKey?.slice(0, 6)}...{publicKey?.slice(-4)}
-                                    </>
-                                ) : (
-                                    <>Connect Wallet</>
-                                )}
-                            </span>
-                        </button>
+                        <div className="flex items-center gap-2">
+                            <button
+                                onClick={() => {
+                                    if (!connected) {
+                                        const leo = wallets.find(w => w.adapter.name === 'Leo Wallet');
+                                        if (leo) select(leo.adapter.name);
+                                    }
+                                }}
+                                className="relative group px-4 py-2 rounded-xl text-sm font-bold overflow-hidden transition-all"
+                            >
+                                <div className={`absolute inset-0 opacity-20 group-hover:opacity-30 transition-opacity ${connected ? 'bg-emerald-500' : 'bg-violet-500'}`}></div>
+                                <div className={`absolute inset-0 blur-xl opacity-20 ${connected ? 'bg-emerald-500' : 'bg-violet-500'}`}></div>
+                                <span className={`relative flex items-center gap-2 ${connected ? 'text-emerald-400' : 'text-violet-400'}`}>
+                                    {connected ? (
+                                        <>
+                                            <span className="w-2 h-2 bg-emerald-400 rounded-full shadow-[0_0_10px_rgba(52,211,153,0.5)]"></span>
+                                            {publicKey?.slice(0, 6)}...{publicKey?.slice(-4)}
+                                        </>
+                                    ) : (
+                                        <>Connect Wallet</>
+                                    )}
+                                </span>
+                            </button>
+
+                            {connected && (
+                                <button
+                                    onClick={() => disconnect()}
+                                    className="p-2 rounded-xl glass-button text-slate-400 hover:text-red-400 hover:bg-red-500/10 transition-colors"
+                                    title="Disconnect Wallet"
+                                >
+                                    <LogOut size={18} />
+                                </button>
+                            )}
+                        </div>
                     </div>
                 </header>
 

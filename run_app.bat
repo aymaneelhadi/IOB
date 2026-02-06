@@ -1,9 +1,9 @@
 @echo off
-title A&A - Interactive Launcher
+title A^&A - Interactive Launcher
 color 0A
 
 echo ===================================================
-echo   Starting A&A App (Debug Mode)
+echo   Starting A^&A App (Debug Mode)
 echo ===================================================
 echo.
 
@@ -28,7 +28,7 @@ cd commercial_devis
 if exist "src/main.leo" (
     call leo build
     if %ERRORLEVEL% NEQ 0 (
-        echo [WARNING] Leo build failed. Skipping... (Is Leo installed?)
+        echo [WARNING] Leo build failed. Skipping... (Is Leo installed?^)
     ) else (
         echo [OK] Contract built.
     )
@@ -42,7 +42,7 @@ echo.
 echo [3/4] Installing Frontend Dependencies...
 cd client
 if not exist "node_modules" (
-    echo Installing npm packages (this may take a minute)...
+    echo Installing npm packages (this may take a minute^)...
     call npm install
     if %ERRORLEVEL% NEQ 0 (
         color 0C

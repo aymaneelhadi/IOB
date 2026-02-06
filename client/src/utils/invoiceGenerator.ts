@@ -9,7 +9,7 @@ export interface InvoiceData {
     status: string;
 }
 
-export const generateInvoicePDF = (data: InvoiceData) => {
+export const generateInvoicePDF = (data: InvoiceData): Promise<Blob> => {
     const doc = new jsPDF();
 
     // -- Branding Colors --
@@ -135,6 +135,21 @@ export const generateInvoicePDF = (data: InvoiceData) => {
     doc.text('This quote is cryptographically secured on the Aleo Testnet Beta.', 105, pageHeight - 30, { align: 'center' });
     doc.text('Immutability guaranteed by Zero-Knowledge Proofs.', 105, pageHeight - 25, { align: 'center' });
 
-    // Save
-    doc.save(`Invoice_${data.id}_${data.date}.pdf`);
+    // Instead of saving, we return the Blob for hashing
+    // doc.save is handled by the caller if they want to download it
+
+    // We return a Promise to be future-proof if we add async image loading
+    const blob = doc.output('blob');
+    return Promise.resolve(blob);
+};
+
+export const downloadPDFBlob = (blob: Blob, filename: string) => {
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = filename;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
 };
